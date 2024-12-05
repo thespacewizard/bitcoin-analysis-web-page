@@ -1,0 +1,971 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kripto Analiz</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.js"
+    integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+
+<style>
+    .ListParent {
+        margin-top: 25px;
+        width: 80%;
+        max-width: 80%;
+        min-width: 80%;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding-left: 10px;
+        padding-right: 10px;
+        /* margin-top: 10px; */
+        margin-bottom: 20px;
+        /* text-align: center; */
+        width: 80%;
+        max-width: 80%;
+        min-width: 80%;
+    }
+
+    .pagination button {
+        flex-grow: 1;
+        flex-basis: 0;
+        margin: 0;
+        padding: 0;
+        text-align: center;
+        /* padding: 8px 16px;
+        margin: 0 5px; */
+        cursor: pointer;
+        font-size: clamp(1px, 90%, 16px);;
+    }
+
+    /* button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 10px 20px;
+        font-size: 16px;
+        border: 2px solid #007bff;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+        border-radius: 5px;
+    } */
+
+    .datedFetchDropdownWS {
+        display: block;
+    }
+
+    .datedFetchDropdownRESTAPI {
+        display: block;
+    }
+
+    .spinner {
+        margin-right: 5px;
+        margin-left: 5px;
+        padding: 0;
+        border: 3px solid #f3f3f3; /* Açık renk */
+        border-top: 3px solid #3498db; /* Dönen renk */
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        animation: spinRotate 1s linear infinite; /* Döndürme animasyonu */
+    }
+
+    @keyframes spinRotate {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+</style>
+
+</head>
+<body>
+    <div id="navbar"></div>
+
+    <h1 class="text-center mt-5">Coin Hacim Analizi</h1>
+
+    <h2 class="text-center mt-5">Buradan belirli bir süre aralığında yapılan toplam bitcoin alım/satım hacmi görüntülenebilir.</h2>
+
+    <div class="d-flex justify-content-center align-items-center mt-3 mb-1">
+        <h6 class="ms-2 me-2 ps-2 pe-2 text-center">İşlem metodu: </h6>
+        <div id="methodDropdown" style="width: 15vw;">
+            <button id="methodDropdownBtn" class="btn btn-primary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Metot
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" style="cursor: pointer;" onclick="CheckFetchingMethod(0)">Websocket kullan (Daha hızlı)</a></li>
+                <li><a class="dropdown-item" style="cursor: pointer;" onclick="CheckFetchingMethod(1)">REST API kullan (Sunucuya depolamak zorunda olmadan verileri çekebilir)</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-center align-items-center m-2">
+        <div class="me-2" style="font-size: medium; font-weight: bold;">Otomatik yenileme süresi(sn):</div>
+        <input id="AutoRefresherTimer" type="number" id="numberInput" placeholder="Bir sayı girin">
+    </div>
+
+    <div class="d-flex justify-content-center align-items-center mt-3 mb-1">
+        <button id="RefreshAllTradesButton" class="btn btn-primary w-25 m-2 d-flex justify-content-center align-items-center" onclick="TryToListAllCoinsInMarket()">Tüm Coin'leri Aktarmayı Dene(İşlem çok ağır çalışır)</button>
+        <button id="RefreshSpecificTradesButton" class="btn btn-primary w-25 m-2" onclick="TryToListDeterminedInMarket()">Belirlenen Coin'leri Çek</button>
+        <button id="AutoRefreshToggle" class="btn btn-primary w-25 m-2" onclick="refreshToggleMarketTrades()">Otomatik yenile</button>
+    </div>
+    
+    <h6 id="waitingWarning" class="text-center">Bekleme süresi internet hızınıza bağlı olarak değişir. Çok fazla işlem çekmek sunucu tarafından bloke edilmenize neden olabilir.</h6>
+
+    <div class="container ListParent">
+        <span id="latencyWarning">(REST API'de Geniş zaman aralığı işlemin yavaş çalışmasına sebep olabilir.) (Ayrıca bazı coinlerin fetch edilme süreçleri çok geç işleyebilir.)</span>
+        <span id="WSLastFetchedTradeTimestamp">//Value_LastFetchedTradeTimestamp//</span>
+        <div class="d-flex mb-1">
+            <div id="datedFetchDropdownRESTAPI" class="datedFetchDropdownRESTAPI">
+                <button id="datedFetchDropdownButtonRESTAPI" class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Zaman aralığı
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(0)">Şimdi'den başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(1)">1 dakika önce'den başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(2)">2 dakika önce'den başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(3)">3 dakika önce'den başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(4)">4 dakika önce'den başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(5)">5 dakika önce'den başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(6)">6 dakika önce'den başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(7)">7 dakika önce'den başla</a></li>
+                </ul>
+            </div>
+            <div id="datedFetchDropdownWS" class="datedFetchDropdownWS">
+                <button id="datedFetchDropdownButtonWS" class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Zaman aralığı
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(0)">Anlık İşlemleri Çek</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(1)">1 Dakika Önceden Başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(3)">3 Dakika Önceden Başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(7)">7 Dakika Önceden Başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(10)">10 Dakika Önceden Başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(15)">15 Dakika Önceden Başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(30)">30 Dakika Önceden Başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(45)">45 Dakika Önceden Başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(60)">1 Saat Önceden Başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(90)">1.5 Saat Önceden Başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(120)">2 Saat Önceden Başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(150)">2.5 Saat Önceden Başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(180)">3 Saat Önceden Başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(210)">3.5 Saat Önceden Başla</a></li>
+                    <li><a class="dropdown-item" style="cursor: pointer;" onclick="setFetchingTradesDate(240)">4 Saat Önceden Başla</a></li>
+                </ul>
+            </div>
+
+            <input type="text" class="form-control ms-1 me-1" id="dynamicCoinInput1" placeholder="Coin Sembolü Girin">
+            <input type="text" class="form-control ms-1 me-1" id="dynamicCoinInput2" placeholder="Örn: BTC/USDT">
+            <input type="text" class="form-control ms-1 me-1" id="dynamicCoinInput3" placeholder="Örn: ETC/BTC">
+            <input type="text" class="form-control ms-1 me-1" id="dynamicCoinInput4" placeholder="Örn: BNB/BTC">
+            <input type="text" class="form-control ms-1 me-1" id="dynamicCoinInput5" placeholder="Örn: LTC/BTC">
+            <input type="text" class="form-control ms-1 me-1" id="dynamicCoinInput6" placeholder="Örn: NEO/BT">
+        </div>
+
+        <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Sembol</th>
+                    <th>Fiyat</th>
+                    <th>Toplam Miktar</th>
+                    <th>İşlem Türü</th>
+                    <th>İlk İşlem Tarihi</th>
+                    <th>Son İşlem Tarihi</th>
+                </tr>
+            </thead>
+            <tbody id="ListBody">
+                <tr>
+                    <td>SYMBOL</td>
+                    <td>PRICE</td>
+                    <td>TOTAL AMOUNT</td>
+                    <td>TRANSACTION TYPE</td>
+                    <td>FIRST DATE</td>
+                    <td>LAST DATE</td>
+                </tr>
+                <tr>
+                    <td>SYMBOL</td>
+                    <td>PRICE</td>
+                    <td>TOTAL AMOUNT</td>
+                    <td>TRANSACTION TYPE</td>
+                    <td>FIRST DATE</td>
+                    <td>LAST DATE</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="container pagination" id="pagination">
+        <!-- <div style="background-color: blue; height: 150px; width: 100%;"></div> -->
+    </div>
+
+<script src="navbartemplate.html"></script>
+
+<script>
+
+    let fetchingIsWebsocket = true;
+    function CheckFetchingMethod(methodValue, SilentMode = false){
+        const buttonelement = document.getElementById("methodDropdownBtn");
+        const datedFetchDropdownRESTAPI = document.getElementById("datedFetchDropdownRESTAPI");
+        const datedFetchDropdownWS = document.getElementById("datedFetchDropdownWS");
+        const latencyWarning = document.getElementById("latencyWarning");
+        const CheckFirstTimeStamp = document.getElementById("WSLastFetchedTradeTimestamp");
+        const RefreshAllTradesButton = document.getElementById("RefreshAllTradesButton");
+        const waitingWarning = document.getElementById("waitingWarning");
+
+        if (SilentMode === false){
+            if (methodValue === 0){
+                fetchingIsWebsocket = true;
+            }
+            else if (methodValue === 1){
+                fetchingIsWebsocket = false;
+            }
+        }
+
+        if (fetchingIsWebsocket){
+            buttonelement.innerText = "Websocket";
+            datedFetchDropdownRESTAPI.style.display = "none";
+            datedFetchDropdownWS.style.display = "block";
+            latencyWarning.style.display = "none";
+            CheckFirstTimeStamp.style.display = "block";
+            RefreshAllTradesButton.classList.add("d-none");
+            waitingWarning.style.display = "none";
+            WS_CheckLastFetchedTradeTimestamp();
+            setFetchingTradesDate(1);
+        }
+        else {
+            buttonelement.innerText = "REST API";
+            datedFetchDropdownRESTAPI.style.display = "block";
+            datedFetchDropdownWS.style.display = "none";
+            latencyWarning.style.display = "block";
+            CheckFirstTimeStamp.style.display = "none";
+            RefreshAllTradesButton.classList.remove("d-none");
+            waitingWarning.style.display = "block";
+            setFetchingTradesDate(1);
+        }
+
+    }
+    CheckFetchingMethod(-1, true);
+
+    async function WS_CheckLastFetchedTradeTimestamp()
+    {
+        const firstTrade = await fetch('/api/ws/binance/firstfetchetvalue');
+        const firstTradeJson = await firstTrade.json();
+
+        const CheckTimeStamp = document.getElementById("WSLastFetchedTradeTimestamp");
+        const date = firstTradeJson.timestamp;
+        const correctedDate = new Date(date).toLocaleTimeString();
+        CheckTimeStamp.innerText = `Veri depolama başlangıc zamanı: ${correctedDate} (Websocket'te sunucu çalışmaya başladığı an itibariyle verileri depolamaya başlar. 
+        Zaman arağılığını "4 saat" olarak belirtseniz bile ilk verinin tarihinden başlayarak verileri çekecektir.`;
+    }
+
+
+// FETCHING COINS> //
+
+    let AllExchanges = [];
+    var DeterminedExchanges = [];
+    let currentPage = 1;
+    const tradesPerPage = 15;
+    var fetchingTradesDate = fetchingTradesDate ?? 0;
+
+    function setFetchingTradesDate(mins){ // 3 * 60 * 1000  =  3 min.
+        fetchingTradesDate = mins * 60 * 1000;
+
+        let button2 = document.getElementById("datedFetchDropdownButtonRESTAPI");
+        let button = document.getElementById("datedFetchDropdownButtonWS");
+
+        button.innerText = `${mins} Dakika`;
+        button2.innerText = `${mins} Dakika`;
+
+        if (mins == 0) {
+            button.innerText = `Anlık trade'leri çek`;
+            button2.innerText = `Anlık trade'leri çek`;
+        }
+    }
+
+    function SeekAuroRefreshTimer(){
+        const input = document.getElementById("AutoRefresherTimer");
+
+        AddListenerToInput(input);
+
+        function AddListenerToInput(inputItem){
+            inputItem.addEventListener('change', () => {
+                refreshTime = Number(inputItem.value);
+            });
+        }
+    }
+    SeekAuroRefreshTimer();
+
+    function SeekInputtedCoins(){
+        const coinInput1 = document.getElementById('dynamicCoinInput1');
+        const coinInput2 = document.getElementById('dynamicCoinInput2');
+        const coinInput3 = document.getElementById('dynamicCoinInput3');
+        const coinInput4 = document.getElementById('dynamicCoinInput4');
+        const coinInput5 = document.getElementById('dynamicCoinInput5');
+        const coinInput6 = document.getElementById('dynamicCoinInput6');
+
+        AddListenerToInput(coinInput1, 0);
+        AddListenerToInput(coinInput2, 1);
+        AddListenerToInput(coinInput3, 2);
+        AddListenerToInput(coinInput4, 3);
+        AddListenerToInput(coinInput5, 4);
+        AddListenerToInput(coinInput6, 5);
+
+        
+        function AddListenerToInput(inputItem, ExchangeListTrgtIndex){
+            inputItem.addEventListener('change', () => {
+                DeterminedExchanges[ExchangeListTrgtIndex] = inputItem.value.toUpperCase();
+                inputItem.style.color = 'black';
+            });
+        }
+    }
+    SeekInputtedCoins();
+
+    var StopTryToListingAllCoins = false;
+    var TryToListToggle = false;
+    async function TryToListAllCoinsInMarket()
+    {
+        TryToListToggle = !TryToListToggle;
+
+        if (!TryToListToggle){
+            StopFullListingCoins();
+            return;
+        }
+
+        AllExchanges = []; // delete all exchanges on the list
+
+        StopTryToListingAllCoins = false;
+
+        const button = document.getElementById("RefreshAllTradesButton");
+        button.innerHTML = '<div class="spinner"></div> Yükleniyor... Durdurmak için tıklayın.';
+
+        const fetchingSymbols = await fetch('/api/ccxt/markets');
+        const symbols = await fetchingSymbols.json();
+
+        for (let index = 0; index < symbols.length; index++) {
+            await getMarketTradesWRESTAPI(symbols[index]);
+
+            if (StopTryToListingAllCoins)
+                break;
+        }
+
+        // getMarketTrades("BTC/USDT");
+    }
+
+    function StopFullListingCoins(){
+        StopTryToListingAllCoins = true;
+
+        const button = document.getElementById("RefreshAllTradesButton");
+        button.innerHTML = "Tüm Coin'leri Aktarmayı Dene(İşlem çok ağır çalışır)";
+    }
+
+    function TryToListDeterminedInMarket(){
+
+        if (fetchingIsWebsocket)
+            TryToListDeterminedInMarketWS();
+        else
+            TryToListDeterminedInMarketRESTAPI();
+    }
+
+    async function TryToListDeterminedInMarketWS(){
+        AllExchanges = []; // delete all exchanges on the list
+
+        const fetchingSymbols = await fetch('/api/ccxt/markets');
+        const symbols = await fetchingSymbols.json();
+        // console.log(symbols); // Tüm kullanılabilir sembolleri listele
+
+        let CorrectListValues = [];
+
+        for (let index = 0; index < DeterminedExchanges.length; index++) {
+
+            if (symbols.includes(DeterminedExchanges[index]) == false){
+                const CurrentCoinInputElement = document.getElementById(`dynamicCoinInput${index + 1}`);
+                CurrentCoinInputElement.value = "GEÇERSİZ GİRİŞ";
+                CurrentCoinInputElement.style.color = 'red';
+
+                CorrectListValues[index] = 'invalid';
+            }
+            else
+            {
+                CorrectListValues[index] = DeterminedExchanges[index];
+            }
+            
+        }
+
+        console.log("Current Fetching Coin List : ", CorrectListValues);
+
+        for (let index = 0; index < CorrectListValues.length; index++) {
+            if (CorrectListValues[index] !== 'invalid') {
+                const CurrentCoinInputElement = document.getElementById(`dynamicCoinInput${index + 1}`);
+                CurrentCoinInputElement.value = "Bekleniyor...";
+                
+                await getMarketTradesWithWS(CorrectListValues[index]);
+
+                CurrentCoinInputElement.value = CorrectListValues[index];
+            }
+        }
+    }
+
+    // 3 dakikada bir alım satım işlemlerini getiren fonksiyon
+    async function getMarketTradesWithWS(coinSymbol) {
+      try {
+        // BTC/USDT için son alım satım işlemlerini getir
+
+        const symbol = coinSymbol;
+        const limit = 1000;
+        const now = Date.now();
+        let allTrades = [];
+
+        let sinceDate = now - fetchingTradesDate;
+
+        const fetchtrades = await fetch(`/api/ws/binance?symbol=${symbol}`);//binance.fetchTrades(symbol, since, limit);
+        const trades = await fetchtrades.json();
+
+        for (let index = trades.length - 1; index >= 0; index--) {
+            allTrades.push(trades[index]);
+
+            const currentTradeDate = trades[index].timestamp;
+
+            if (currentTradeDate < sinceDate){
+                break;
+            }
+        }
+
+        const buyTrades = [];
+        const sellTrades = [];
+
+        allTrades.forEach(trade => {
+            if (trade.m === false) {
+                buyTrades.push(trade);
+            } 
+            else {
+                sellTrades.push(trade);
+            }
+        });
+
+        //Indicate non-existent values
+        if (buyTrades.length == 0){
+            buyTrades[0] = {s: "YOK", p: "YOK", q:"YOK"};
+        }
+        if (sellTrades.length == 0){
+            sellTrades[0] = {s: "YOK", p: "YOK", q:"YOK"};
+        }
+
+        let CurrentCoinBuyAverage = {value: 0};
+        let CurrentCoinSellAverage = {value: 0};
+
+        CalculateAverageValueOfCoinWS(buyTrades, sellTrades, CurrentCoinBuyAverage, CurrentCoinSellAverage);
+        AllExchanges.push(CurrentCoinBuyAverage.value);
+        AllExchanges.push(CurrentCoinSellAverage.value);
+
+        renderTable();
+        renderPagination();
+
+      } catch (error) {
+        console.error("Hata oluştu:", error);
+      }
+
+      return new Promise(resolve => { 
+            setTimeout(() => { 
+                console.log("Third function completed"); 
+                resolve();
+            }, 100); // 1 saniye bekler 
+        });
+    }
+
+    function CalculateAverageValueOfCoinWS(buyTrades, sellTrades, CurrentCoinBuyAverage, CurrentCoinSellAverage){
+        let tempCurrentCoinBuyAverage = buyTrades[0];
+        let tempCurrentCoinSellAverage = sellTrades[0];
+
+        let totalBuyPrice = 0;
+        let totalBuyedAmount = 0;
+        buyTrades.forEach(buyTrade => {
+            totalBuyPrice += Number(buyTrade.p);
+            totalBuyedAmount += Number(buyTrade.q);
+        });
+        const averageBuyPrice = totalBuyPrice / buyTrades.length;
+
+        tempCurrentCoinBuyAverage.symbol = buyTrades[0].s;
+        tempCurrentCoinBuyAverage.price = averageBuyPrice;
+        tempCurrentCoinBuyAverage.amount = totalBuyedAmount;
+        tempCurrentCoinBuyAverage.side = "buy";
+        tempCurrentCoinBuyAverage.firsttimestamp = buyTrades[buyTrades.length - 1].timestamp;
+        tempCurrentCoinBuyAverage.lasttimestamp = buyTrades[0].timestamp;
+
+        let totalSellPrice = 0;
+        let totalSoldAmount = 0;
+        sellTrades.forEach(selltrade => {
+            totalSoldAmount +=  Number(selltrade.q);
+            totalSellPrice += Number(selltrade.p);
+        });
+        const averageSellPrice = totalSellPrice / sellTrades.length;
+
+        tempCurrentCoinSellAverage.symbol = sellTrades[0].s;;
+        tempCurrentCoinSellAverage.price = averageSellPrice;
+        tempCurrentCoinSellAverage.amount = totalSoldAmount;
+        tempCurrentCoinSellAverage.side = "sell";
+        tempCurrentCoinSellAverage.firsttimestamp = sellTrades[sellTrades.length - 1].timestamp;
+        tempCurrentCoinSellAverage.lasttimestamp = sellTrades[0].timestamp;
+
+        CurrentCoinBuyAverage.value = tempCurrentCoinBuyAverage;
+        CurrentCoinSellAverage.value = tempCurrentCoinSellAverage;
+    }
+
+    async function TryToListDeterminedInMarketRESTAPI(){
+        AllExchanges = []; // delete all exchanges on the list
+
+        const fetchingSymbols = await fetch('/api/ccxt/markets');
+        const symbols = await fetchingSymbols.json();
+        // console.log(symbols); // Tüm kullanılabilir sembolleri listele
+
+        let CorrectListValues = [];
+
+        for (let index = 0; index < DeterminedExchanges.length; index++) {
+
+            if (symbols.includes(DeterminedExchanges[index]) == false){
+                const CurrentCoinInputElement = document.getElementById(`dynamicCoinInput${index + 1}`);
+                CurrentCoinInputElement.value = "GEÇERSİZ GİRİŞ";
+                CurrentCoinInputElement.style.color = 'red';
+
+                CorrectListValues[index] = 'invalid';
+            }
+            else
+            {
+                CorrectListValues[index] = DeterminedExchanges[index];
+            }
+            
+        }
+
+        console.log("Current Fetching Coin List : ", CorrectListValues);
+
+        for (let index = 0; index < CorrectListValues.length; index++) {
+            if (CorrectListValues[index] !== 'invalid') {
+                const CurrentCoinInputElement = document.getElementById(`dynamicCoinInput${index + 1}`);
+                CurrentCoinInputElement.value = "Bekleniyor...";
+                
+                await getMarketTradesWRESTAPI(CorrectListValues[index]);
+
+                CurrentCoinInputElement.value = CorrectListValues[index];
+            }
+        }
+    }
+
+    // 3 dakikada bir alım satım işlemlerini getiren fonksiyon
+    async function getMarketTradesWRESTAPI(coinSymbol) {
+      try {
+        // BTC/USDT için son alım satım işlemlerini getir
+
+        const symbol = coinSymbol;
+        const limit = 1000;
+        const now = Date.now();
+        let allTrades = [];
+
+        let since = now - fetchingTradesDate;
+
+        let CorrectedSinceValue = fetchingTradesDate == 0 ? undefined : since; // Başlangıç zamanı
+
+        while (true){
+            const fetchtrades = await fetch(`/api/ccxt/trades?symbol=${symbol}&since=${CorrectedSinceValue}`);//binance.fetchTrades(symbol, since, limit);
+            const trades = await fetchtrades.json();
+
+            if (trades.length === 0) break;
+
+            allTrades = allTrades.concat(trades);
+            CorrectedSinceValue = trades[trades.length - 1].timestamp;
+
+            if (CorrectedSinceValue >= now) break;
+        }
+
+        const buyTrades = [];
+        const sellTrades = [];
+
+        allTrades.forEach(trade => {
+            if (trade.side === 'buy') {
+                buyTrades.push(trade);
+            } 
+            else if (trade.side === 'sell') {
+                sellTrades.push(trade);
+            }
+        });
+
+        let CurrentCoinBuyAverage = {value: 0};
+        let CurrentCoinSellAverage = {value: 0};
+
+        CalculateAverageValueOfCoinRESTAPI(buyTrades, sellTrades, CurrentCoinBuyAverage, CurrentCoinSellAverage);
+        AllExchanges.push(CurrentCoinBuyAverage.value);
+        AllExchanges.push(CurrentCoinSellAverage.value);
+        // allTrades = await binance.fetchTrades('BTC/USDT', threeMinutesAgo, 1000);
+        renderTable();
+        renderPagination();
+
+      } catch (error) {
+        console.error("Hata oluştu:", error);
+      }
+
+      return new Promise(resolve => { 
+            setTimeout(() => { 
+                console.log("Third function completed"); 
+                resolve();
+            }, 100); // 1 saniye bekler 
+        });
+    }
+
+
+    function CalculateAverageValueOfCoinRESTAPI(buyTrades, sellTrades, CurrentCoinBuyAverage, CurrentCoinSellAverage){
+        let tempCurrentCoinBuyAverage = buyTrades[0];
+
+        let totalBuyPrice = 0;
+        let totalBuyedAmount = 0;
+        buyTrades.forEach(buyTrade => {
+            totalBuyPrice +=  Number(buyTrade.price);
+            totalBuyedAmount += Number(buyTrade.amount);
+        });
+        const averageBuyPrice = totalBuyPrice / buyTrades.length;
+
+        tempCurrentCoinBuyAverage.symbol = buyTrades[0].symbol;
+        tempCurrentCoinBuyAverage.price = averageBuyPrice;
+        tempCurrentCoinBuyAverage.amount = totalBuyedAmount;
+        tempCurrentCoinBuyAverage.side = 'Buy'
+        tempCurrentCoinBuyAverage.firsttimestamp = buyTrades[0].timestamp;
+        tempCurrentCoinBuyAverage.lasttimestamp = buyTrades[buyTrades.length - 1].timestamp;
+
+        
+        let tempCurrentCoinSellAverage = sellTrades[0];
+        let totalSellPrice = 0;
+        let totalSoldAmount = 0;
+        sellTrades.forEach(selltrade => {
+            totalSellPrice += Number(selltrade.price);
+            totalSoldAmount +=  Number(selltrade.amount);
+        });
+        const averageSellPrice = totalSellPrice / sellTrades.length;
+
+        tempCurrentCoinSellAverage.symbol = sellTrades[0].symbol;
+        tempCurrentCoinSellAverage.price = averageSellPrice;
+        tempCurrentCoinSellAverage.amount = totalSoldAmount;
+        tempCurrentCoinSellAverage.side = 'Sell'
+        tempCurrentCoinSellAverage.firsttimestamp = sellTrades[0].timestamp;
+        tempCurrentCoinSellAverage.lasttimestamp = sellTrades[sellTrades.length - 1].timestamp;
+
+        CurrentCoinBuyAverage.value = tempCurrentCoinBuyAverage;
+        CurrentCoinSellAverage.value = tempCurrentCoinSellAverage;
+    }
+
+// <FETCHING COINS //
+
+
+    function renderTable()
+    {
+        var ListBody = document.getElementById("ListBody");
+        ListBody.innerHTML = "";
+
+        const start = (currentPage - 1) * tradesPerPage;
+        const end = start + tradesPerPage;
+        const paginatedTrades = AllExchanges.slice(start, end);
+
+        // Her bir işlemi konsola yazdır
+        paginatedTrades.forEach(trade => {
+        //   console.log(`Zaman: ${new Date(trade.timestamp).toLocaleString()} | Fiyat: ${trade.price} | Miktar: ${trade.amount} | Tip: ${trade.side}`);
+            let line1 = `<td>${trade.symbol}</td>`;
+            let line2 = `<td>${trade.price}</td>`; //USDT - EK
+            let line3 = `<td>${trade.amount}</td>`; //BTC - EK
+            let line4 = `<td>${trade.side.toUpperCase()}</td>`;
+            let line5 = `<td>${new Date(trade.firsttimestamp).toLocaleString()}</td>`;
+            let line6 = `<td>${new Date(trade.lasttimestamp).toLocaleString()}</td>`;
+            let innerHtmlContent = line1 + line2 + line3 + line4 + line5 + line6;
+
+            const row = document.createElement("tr");
+            row.innerHTML = innerHtmlContent;
+            ListBody.appendChild(row);
+            
+        });
+    }
+
+    // Sayfalama kontrolün
+    function renderPagination() {
+        const totalPages = Math.ceil(AllExchanges.length / tradesPerPage);
+
+        if (totalPages <= 1)
+            return;
+
+        const paginationContainer = document.getElementById("pagination");
+        paginationContainer.innerHTML = ''; // Sayfalama içeriğini temizle
+
+        // Önceki butonu
+        const prevButton = document.createElement("button");
+        prevButton.className += 'btn btn-secondary border-dark rounded-0';
+        prevButton.textContent = "‹";
+        prevButton.disabled = currentPage === 1;
+        prevButton.onclick = () => {
+            if (currentPage > 1) {
+            currentPage--;
+            renderTable();
+            renderPagination();
+            }
+        };
+        paginationContainer.appendChild(prevButton);
+
+        // Sayfa numaralarını oluştur
+        if (totalPages <= 30){
+            for (let i = 1; i <= totalPages; i++) {
+                const pageButton = document.createElement("button");
+                pageButton.className += 'btn btn-secondary border-dark rounded-0';
+                pageButton.textContent = i;
+                pageButton.disabled = i === currentPage;
+                pageButton.onclick = () => {
+                currentPage = i;
+                renderTable();
+                renderPagination();
+                };
+                paginationContainer.appendChild(pageButton);
+            }
+        }
+        else
+        {
+            // 30 IS MAX PAGE VALUE
+
+            const maxPageValue = totalPages;
+
+
+            let currentPageMargin = currentPage;
+            let currentPageMarginLowValue;
+            let currentPageMarginHighValue;
+            
+            currentPageMarginLowValue = Math.max(currentPageMargin - 4, 1);
+            currentPageMarginHighValue = Math.min(currentPageMargin + 4, maxPageValue);
+            const totalResidentPageCount = currentPageMarginHighValue - currentPageMarginLowValue + 1; // 9
+
+            // console.log(currentPageMarginLowValue);
+            // console.log(currentPageMarginHighValue);
+
+            let buttonNumbersList = [];
+            let buttonNumRateToTotalPlages = totalPages / 30;
+
+            let loopLimit = 30;
+
+            for (let index = 1; index <= loopLimit; index++) {
+
+                let currentButtonNumber = index * buttonNumRateToTotalPlages;
+                currentButtonNumber = Math.round(currentButtonNumber);
+                
+                // console.log("index : ", index);
+                // console.log("current list lenght : ", buttonNumbersList.length);
+
+                if (currentButtonNumber >= currentPageMarginLowValue && currentButtonNumber <= currentPageMarginHighValue){
+                    let pushedLength = 0;
+
+                    const currentListLength = buttonNumbersList.length;
+                    const difference = currentPageMarginHighValue - currentPageMarginLowValue + 1;
+                    // console.log("difference : ", difference);
+                    if (currentListLength + difference >= 30)
+                    {
+                        const croppingValue = Math.round(30 - (currentListLength + difference));
+                        // console.log("cropping value:", croppingValue);
+
+                        // console.log("old length : ", buttonNumbersList.length);
+                        
+                        if (croppingValue != 0)
+                            buttonNumbersList.splice(croppingValue);
+                        // console.log("new length : ", buttonNumbersList.length);
+                        // console.log("new list : ", buttonNumbersList);
+                    }
+                    for (let i = currentPageMarginLowValue; i <= currentPageMarginHighValue; i++) { 
+                        buttonNumbersList.push(i); 
+                        pushedLength++; 
+                    };
+
+                    index += pushedLength - 1; //1 subtracted because of next loop index will be increased.
+
+                    // if (currentPageMarginHighValue < totalPages){
+                    //     loopLimit += pushedLength;
+                    //     console.log("new loop limit : ", loopLimit);
+                    // }
+
+                    // console.log("pushed: ", pushedLength);
+                    // console.log("new index : ", index);
+
+                    // console.log("new list after pushed : ", buttonNumbersList);
+
+                    if (index >= 30)
+                    {
+                        console.log("30. eleman eşitlendi", maxPageValue);
+                        buttonNumbersList[29] = maxPageValue;
+                        break;
+                    }
+                }
+                else
+                {
+                    // console.log("loopruns");
+                    if (currentButtonNumber > totalPages){
+
+                        break;
+                    }
+
+                    if (index == 1) {
+                        buttonNumbersList.push(1)
+                    }
+                    else if (index == 30) {
+                        buttonNumbersList.push(maxPageValue)
+                    }
+                    else{
+                        buttonNumbersList.push(currentButtonNumber);
+                    }
+                }
+            }
+
+            buttonNumbersList.sort((a, b) => a - b);
+
+            // console.log("last list : ", buttonNumbersList);
+
+            // console.log(buttonNumbersList.length);
+
+
+            for (let i = 1; i <= 30; i++) {
+                const pageButton = document.createElement("button");
+                pageButton.className += 'btn btn-secondary border-dark rounded-0';
+
+                const pageNumberInSortedList = buttonNumbersList[i - 1];
+
+                pageButton.textContent = pageNumberInSortedList;
+
+                pageButton.disabled = pageNumberInSortedList === currentPage;
+
+
+                pageButton.onclick = () => {
+                currentPage = pageNumberInSortedList;
+                renderTable();
+                renderPagination();
+                };
+                paginationContainer.appendChild(pageButton);
+            }
+        }
+
+        // Sonraki butonu
+        const nextButton = document.createElement("button");
+        nextButton.className += 'btn btn-secondary border-dark rounded-0';
+        nextButton.textContent = "›";
+        nextButton.disabled = currentPage === totalPages;
+        nextButton.onclick = () => {
+            if (currentPage < totalPages) {
+            currentPage++;
+            renderTable();
+            renderPagination();
+            }
+        };
+        paginationContainer.appendChild(nextButton);
+    }
+
+    // getMarketTrades();
+    // 3 dakikada bir işlemleri çekmek için aralık ayarlama
+    // setInterval(getMarketTrades, 180000); // 180000 ms = 3 dakika
+
+    var refreshTime = refreshTime ? refreshTime : 1;
+    var refreshCounter = 0;
+    let refreshInterval;
+    let autoRefreshTimer;
+    let timerIsRunning = false;
+    let autoRefresh = false;
+
+    function refreshMarketTrades()
+    {
+
+        if (refreshCounter <= 0)
+        {
+            if (fetchingIsWebsocket) {
+                TryToListDeterminedInMarketWS();
+            }
+
+            else {
+                TryToListDeterminedInMarketRESTAPI();
+            }
+            refreshCounter = refreshTime; 
+            countingRefresh();
+        }
+
+        // clearInterval(timer);
+
+        // timer = setInterval(() => {
+        //     refreshCounter--;
+
+        //     refreshButton.textContent = "(" + refreshCounter + ")";
+
+        //     if (refreshCounter <= 0)
+        //     {
+        //         clearInterval(timer);
+        //         if (refreshButton.classList.contains("disabled"))
+        //             refreshButton.classList.toggle("disabled");
+                
+        //         refreshButton.textContent = "Yenile";
+        //     }
+        // }, 1000);
+    }
+
+    function refreshToggleMarketTrades()
+    {
+        const toggle = document.getElementById("AutoRefreshToggle");
+        autoRefresh = !autoRefresh;
+
+        if (autoRefresh)
+        {
+            toggle.classList.add('btn-secondary');
+
+            refreshMarketTrades();
+            autoRefreshTimer = setInterval(() => {
+
+                if (refreshCounter <= 0)
+                refreshMarketTrades();
+            
+            }, 1000);
+        }
+        else
+        {
+            toggle.classList.remove('btn-secondary');
+
+            toggle.innerText = "Otomatik yenile";
+
+            clearInterval(autoRefreshTimer);
+        }
+
+    }
+
+    function countingRefresh()
+    {
+        if (timerIsRunning)
+            return;
+
+        timerIsRunning = true;
+
+        const toggle = document.getElementById("AutoRefreshToggle");
+
+        clearInterval(refreshInterval);
+
+        refreshInterval = setInterval(() => {
+            refreshCounter--;
+
+            if (autoRefresh)
+                toggle.innerText = "Yenileniyor... (" + refreshCounter + ")";
+
+            if (refreshCounter <= 0)
+            {
+                clearInterval(refreshInterval);
+
+                timerIsRunning = false;
+            }
+        }, 1000);
+    }
+
+</script>
+
+</body>
+</html>

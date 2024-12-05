@@ -1,0 +1,494 @@
+//This page is a script file but has a type of "html"
+//This was done just for better editing options.
+
+const htmlString = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navbar</title>
+
+    <!-- Preloads -->
+    <!-- <link rel="preload" href="Images/Effects/Lightning.png" as="image"> -->
+
+    <!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            padding-top: 56px; /* Navbar'ın üst kısmından dolayı sayfanın üst kısmında bir boşluk bırakır */
+        }
+        /* Scroll takip eden navbar stilini ayarla */
+        .fixed-top-scroll {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            transition: background-color 0.3s;
+            z-index: 1000;
+        }
+    </style> -->
+
+    <style>
+        @keyframes spin {
+            0% {
+                transform: rotateY(0deg);
+            }
+            50% {
+                transform: rotateY(0deg);
+            }
+            100% {
+                transform: rotateY(360deg);
+            }
+        }
+
+        body {
+            padding-top: 100px;
+        }
+
+        .rotating-logo {
+            animation: spin 5s linear infinite;
+        }
+
+        .logo-image {
+            width: 60px;
+            height: 60px;
+            margin-left: 10px;
+            margin-right: 10px;
+            filter: drop-shadow(10px 10px 15px rgba(0, 0, 0, 0.5));
+        }
+
+        .square-button {
+            height: 65px;
+            display: flex;
+            justify-content: center;
+            align-items: center; 
+            border-radius: 0;
+            border: none;
+            /* background-color: #000;
+            color: white; */
+        }
+
+        .blur{
+            transition: filter 1.5s ease;
+            filter: blur(5px);
+        }
+    </style>
+</head>
+<body>
+
+<nav id="PageNavbar" class="navbar navbar-expand-lg navbar-light bg-light fixed-top p-0 m-0">
+    <div class="container-fluid">
+        
+        <a href="#">
+            <img src="Content/Images/logo.png" class="text-fluid logo-image rotating-logo" alt="Logo">
+        </a>
+        <a class="navbar-brand" href="#"></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse flex-grow-1 text-right" id="navbarNav">
+            <div class="btn-group navbar-nav ms-auto flex-nowrap" role="group" aria-label="Basic example">
+                <a id="NavbarHome" class="btn btn-light square-button">Ana Sayfa</a>
+                <a id="ConAnalysis" class="btn btn-light square-button">Coin Analizi</a>
+                <a id="?Button" class="btn btn-light square-button">☂️</a>
+            </div>
+
+        </div>
+    </div>
+</nav>
+
+<!-- Bootstrap JS ve Popper.js dosyalarını eklemeye gerek yok -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<script>
+    // Scroll olayını dinle ve navbar'ın arkaplan rengini değiştir
+    document.addEventListener('scroll', function () {
+        var navbar = document.querySelector('.fixed-top-scroll');
+        var scrollTop = window.scrollY;
+
+        if (scrollTop > 0) {
+            navbar.style.backgroundColor = '#f8f9fa'; // Scroll yukarıdayken arkaplan rengi
+        } else {
+            navbar.style.backgroundColor = 'transparent'; // Scroll en üstteyken arkaplan rengi
+        }
+    });
+</script>
+
+</body>
+</html>
+
+`;
+
+//<script>
+//preload objects
+// (function() {
+
+//     //lightning
+//     const imagePath = 'Images/Effects/Lightning.png';
+//     const img = new Image();
+//     img.src = imagePath;
+
+// })();
+
+// console.log("nav imported");
+document.getElementById('navbar').innerHTML = htmlString;
+
+var home = document.getElementById('NavbarHome');
+var coinAnalysis = document.getElementById('ConAnalysis');
+// var services = document.getElementById('NavbarServices');
+// var contact = document.getElementById('NavbarContact');
+var unknownbutton = document.getElementById("?Button");
+// var chatroom = document.getElementById("Chatroom");
+
+function choosePage(SectionName)
+{
+
+    home.classList.remove("active");
+    coinAnalysis.classList.remove("acitve");
+    // services.classList.remove("active");
+    // contact.classList.remove("active");
+
+    var key = SectionName;
+    switch (key) {
+        case "Home":
+            home.classList.add("active");
+            break;
+        case "CoinAnalysis":
+            coinAnalysis.classList.add("active");
+            break;
+        // case "Services":
+        //     services.classList.add("active");
+        //     break;
+        // case "Contact":
+        //     contact.classList.add("active");
+        //     break;
+        default:
+            home.classList.add("active");
+            break;
+    }
+}
+
+home.onclick = function () {
+    FadeOut(250, 'index.html');
+};
+
+coinAnalysis.onclick = function () {
+    FadeOut(250, 'coinAnalysis.html');
+};
+
+// services.onclick = function () {
+//     scrollToSection('Showcase');
+// }
+
+// contact.onclick = function () {
+//     FadeOut(250, 'contact.html');
+// };
+
+unknownbutton.onclick = function () {
+    // Lightning();
+    Rain();
+};
+
+// chatroom.onclick = function () {
+//     FadeOut(250, 'chatroom.html');
+// };
+
+
+//servies and contact is not developed
+
+function FadeOut(FadeOutTime, TargetPage) {
+    var Body = document.body;
+    Body.classList.add('blur');
+    $(Body).fadeOut(FadeOutTime, function () {
+        // document.body.appendChild(sectionElement);} 
+        // window.scrollTo({
+        //     top: 0,
+        //     behavior: "instant"
+        // });
+        // currentSectionElement.style.display = "none";
+        // targetSectionElement.style.display = "block";
+        // currentSection = targetSection;
+        Body.classList.remove('blur');
+        window.location.href = TargetPage;
+    });
+}
+
+function scrollToSection(TargetID) {
+    const target = document.getElementById(TargetID);
+    if (target == null)
+    {
+        var message = "Merhaba, İkinci Sayfa!";
+        // window.location.href = "index.html?message=" + encodeURIComponent(message); //sending a message
+        window.location.href = "index.html#Showcase";
+        return;
+    }
+
+    target.style.scrollMargin = '5vh';
+    target.scrollIntoView({ behavior: 'smooth'});
+}
+
+function Rain()
+{
+    // let audio = new Audio('Sounds/Effects/thunder-cutted.mp3');
+
+    // audio.play();
+
+    var unknownBtn = document.getElementById("?Button");
+    unknownBtn.style.pointerEvents = "none";
+
+    var Parent = document.createElement("div")
+    Parent.id = "RainContainer"
+
+    Parent.setAttribute("style",
+    `  
+        position: fixed;
+        background: linear-gradient(rgba(0, 0, 0, 0.8), rgba(255, 255, 255, 0.5));
+        width: 100%;
+        height: 100vh;
+        top: 0;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+        pointer-events: none;
+    `);
+
+    document.body.appendChild(Parent);
+
+    var rain = document.createElement("span");
+    rain.id = "Raindrop";
+
+    rain.setAttribute("style",
+        `
+            position: absolute;
+            top: 0;
+            width: 1px;
+            height: 240px;
+            border-radius: 20px;
+            background: linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.8));
+            z-index: 9999999;
+            transform: rotate(10deg);
+            pointer-events: none;
+        `
+    );
+
+    const Keyframes = [
+        { 
+            transform: "translateX(-10vh) translateY(100vh)",
+        }
+        ];
+
+    const defaultOptions = {
+        duration: 500,
+        iterations: 1,
+        fill: 'forwards',
+        };
+
+    // rain.animate(newspaperSpinning, newspaperTiming);
+
+    let RainDropContainer = document.createElement("div");
+    RainDropContainer.id = "RaindropContainer";
+    Parent.appendChild(RainDropContainer);
+
+    let AnimationList = [];
+    let IntervalList = [];
+
+    for (let index = 0; index < 150; index++) {
+
+        let Added = Parent.appendChild(rain.cloneNode(true));
+
+        let randomSpeed = Math.random() * 500 + 500;
+        let randomHorizontalPosition = Math.floor(Math.random() * 100);
+
+        Added.style.left = `${randomHorizontalPosition}%`;
+
+        const Options = {
+        duration: randomSpeed,
+        iterations: 8, //default is 8
+        fill: 'forwards',
+        };
+
+        const anim = Added.animate(Keyframes, Options);
+
+        AnimationList.push(anim);
+
+        IntervalList.push(setInterval(() => {
+            SpawnRainDrop(`${randomHorizontalPosition}%`, RainDropContainer, anim);
+        }, randomSpeed));
+
+        anim.onfinish = () => {
+            Added.remove();
+            clearInterval(IntervalList[IntervalList.length - 1]);
+        };
+        
+        // setTimeout(() => {
+        //     SpawnRainDrop(`${randomPosition}%`, RainDropContainer)
+        // }, randomSpeed);
+    }
+
+    // document.addEventListener('visibilitychange', () => {
+    //     if (document.visibilityState === 'visible') {
+    //         //reset animation...
+    //     }
+    // });
+
+    const checkAnimationStatus = setInterval(() => {
+
+        let stopAnimation = true;
+        AnimationList.forEach(anim => {
+            if (anim.playState != "finished")
+            {
+                stopAnimation = false;
+            }
+        });
+
+        if (stopAnimation)
+        {
+            clearInterval(checkAnimationStatus);
+            Parent.remove();
+            unknownBtn.style.pointerEvents = "auto";
+
+            IntervalList.forEach(interval => {
+                clearInterval(interval);
+            });
+
+            for (let i = 0; i <= 100; i++) {
+                setTimeout(function() {
+                    audio.volume = (1 - i / 100); // Ses seviyesini ayarla
+                }, i * 20);
+            }
+
+            setTimeout(function () {
+                // audio.pause();
+                // audio.src = '';
+                // audio.load();
+                // audio = null;
+            }, 2100);
+
+            IntervalList = null;
+            AnimationList = null;
+        }
+
+    }, 500);
+
+    // setTimeout(() => {
+    //     Parent.remove();
+    // }, 5000); // 2000 milisaniye = 2 saniye
+}
+
+function SpawnRainDrop(horizontalPosition, containerElement, rainAnimation)
+{
+    let rainDrop = document.createElement("span");
+    rainDrop.id = "RainDropEffect";
+
+    let gifDruation = 180;
+    
+    rainDrop.setAttribute("style",
+        `
+            position: fixed;
+            height: 100px;
+            width: 100px;
+            top :0;
+            margin: 0;
+            padding: 0;
+            background-image: url('Content/Images/Effects/rainDrop0.gif'); 
+            background-size: 100% auto;
+            background-position: center; 
+            background-repeat: no-repeat; 
+            z-index: 99999;
+            pointer-events: none;
+            transform: translate(-15vh, 94vh);
+            left: ${horizontalPosition};
+            overflow: hidden;
+        `
+    );
+    containerElement.appendChild(rainDrop);
+
+    const Keyframes = [
+        {
+            backgroundImage: "url('Content/Images/Effects/rainDrop0.gif')",
+        },
+        {
+            backgroundImage: "url('Content/Images/Effects/rainDrop1.gif')",
+        },
+        {
+            backgroundImage: "url('Content/Images/Effects/rainDrop2.gif')",
+        },
+        {
+            backgroundImage: "url('Content/Images/Effects/rainDrop3.gif')",
+        },
+        {
+            backgroundImage: "url('Content/Images/Effects/rainDrop4.gif')",
+        }
+    ];
+
+    const Options = {
+        duration: gifDruation,
+        iterations: 1,
+        fill: 'forwards',
+        };
+
+    const animation = rainDrop.animate(Keyframes, Options);
+
+    setTimeout(() => {
+        rainDrop.remove();
+    }, gifDruation);
+
+    if (rainAnimation.playState == "finished"){
+        rainDrop.remove();
+    }
+    
+    rainAnimation.onfinish = () => {
+        rainDrop.remove();
+    };
+
+    return rainDrop;
+}
+
+function Lightning()
+{
+    var Lightning = document.createElement("div")
+    Lightning.id = "LightningEffect";
+
+    Lightning.setAttribute("style",
+        `
+            position: fixed;
+            height: 100vh;
+            width: 100%;
+            top: 0;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            background-image: url('Images/Effects/Lightning.png'); 
+            background-size: 100% auto;
+            background-position: center; 
+            background-repeat: no-repeat; 
+            z-index: 99999;
+            pointer-events: none;
+        `
+    );
+
+    document.body.appendChild(Lightning);
+
+    const Keyframes = [
+        { opacity: 0},
+        { opacity: 1 },
+        { opacity: 0.5 },
+        { opacity: 0 },
+        ];
+
+    const Options = {
+        duration: 350,
+        iterations: 1,
+        fill: 'forwards',
+        };
+
+    const animation = Lightning.animate(Keyframes, Options);
+
+    animation.finished.then(() => {
+        Lightning.remove();
+    });
+
+}
+//</script>

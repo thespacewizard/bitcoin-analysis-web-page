@@ -1,0 +1,14 @@
+I testes this project only from windows 10. If you have windows 11 or another os, maybe you have to go a different way.
+
+if you know how to use node.js
+install the node.js
+start server.js file from node.js
+
+if you don't know how to use node.js, then you should learn node.js first.
+
+
+based node.js modules
+--npm
+--express
+--ccxt
+--ws

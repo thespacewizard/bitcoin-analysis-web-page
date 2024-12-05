@@ -1,0 +1,421 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kripto Analiz</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.js"
+    integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/ccxt@4.4.31/dist/ccxt.browser.min.js"></script>
+
+<style>
+    .toggle-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      min-height: 10vh; /* Sayfanın ortasına hizalamak için */
+      max-height: 500px; /* Maksimum yüksekliği ayarlayın */
+      overflow-y: auto;  /* Yalnızca dikey kaydırmayı aktif edin */
+    }
+    .form-check {
+      margin: 10px; /* Butonlar arasında boşluk */
+    }
+
+    .input-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 10vh; /* Sayfanın ortasına hizalama */
+    }
+    .input-group {
+      margin: 10px 0; /* Girdiler arasında boşluk */
+    }
+    .add-button {
+      font-size: 1.5rem;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+</style>
+
+</head>
+<body>
+    <div id="navbar"></div>
+
+    <h1 class="text-center mt-5">Kripto para analizi</h1>
+    
+    <h6 class="text-center mt-5 mb-2"> Desteklenen borsalar</h2>
+
+    <div class="container bg-gradient bg-secondary shadow-lg rounded-5">
+        <div class="row justify-content-center align-items-center">
+            <div class="col-4">
+                <img src="Content/Images/binance-logo.png" alt="">
+            </div>
+        </div>
+    </div>
+
+    <h6 class="text-center mt-5">"Coin işlem takibi" sekmesinde anlık veya geriye dönük belirli bir zaman çerçevesinde yapılan coin trade'lerini görüntüleyebilirsiniz.</h6>
+    <h6 class="text-center mt-1 mb-1">"Coin analizi" sekmesinde 24 saatlik veya anlık coin alım-satım hacmi, en yüksek veya en düşük fiyat gibi değerelere göz atabilirsiniz.</h6>
+    <h6 class="text-center mt-5 mb-1">(REST API ile çekilen bitcoinler buna dahil değildir, bunlar sadece websocket için geçerli)</h6>
+    <h6 class="text-center mb-1">Websocket ile şu anda sunucunuza çekilen bitcoinler (aşağıda toggle'lardan hangisini kapatırsanız sunucu o bitcoini çekmeyi bırakır.):</h6>
+    
+    <div class="d-flex justify-content-center align-items-center">
+        <button id="openAllToggles" class="btn btn-gradient btn-primary m-1">Tümünü Aç</button>
+        <button id="closeAllToggles" class="btn btn-gradient btn-primary m-1">Tümünü Kapa</button>
+    </div>
+
+    <div id="coinToggleContainer" class="container toggle-container border">
+        <!-- Toggle Button 1 -->
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="toggle1">
+          <label class="form-check-label" for="toggle1">Toggle 1 test</label>
+        </div>
+        <!-- Toggle Button 2 -->
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="toggle2">
+          <label class="form-check-label" for="toggle2">Toggle 2 test</label>
+        </div>
+        <!-- Toggle Button 3 -->
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="toggle3">
+          <label class="form-check-label" for="toggle3">Toggle 3 test</label>
+        </div>
+        <!-- Toggle Button 4 -->
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="toggle4">
+          <label class="form-check-label" for="toggle4">Toggle 4 test</label>
+        </div>
+        <!-- Toggle Button 5 -->
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="toggle5">
+          <label class="form-check-label" for="toggle5">Toggle 5 test</label>
+        </div>
+    </div>
+
+    <h6 class="text-center mt-2 mb-1">Çekmek istediğiniz coinleri girin örnek format: "btc/usdt,eth/btc,eth/usdt,xrp/btc" (limit: 1000 öge)</h6>
+
+    <!-- <div class="container input-container">
+        <div id="inputWrapper">
+
+          <div class="input-group">
+            <input type="text" class="form-control" placeholder="Enter text">
+          </div>
+        </div>
+
+        <button id="addInput" class="btn btn-primary add-button">+</button>
+    </div> -->
+
+    <div class="container mt-1">
+        <div class="textarea-container">
+            <textarea id="InputSelectedCoins" class="form-control" rows="5" style="resize: both;" placeholder="Buraya veri girin..."></textarea>
+            <div id="responseMessage" class="mt-3"></div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-center align-items-center mt-2 pt-2">
+        <button id="SubmitSelectedCoins" type="submit" class="btn btn-primary me-2">Seçilen bitcoin'leri uygula.</button>
+
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#myModal">
+            Örnek Liste
+        </button>
+        
+        <!-- Modal -->
+        <div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="myModalLabel">Başlık</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <textarea id="examplestext-to-copy" style="overflow-y: auto; width: 100%; height: 35vh">btc/usdt,eth/usdt,bnb/usdt,xrp/usdt,sol/usdt,ada/usdt,doge/usdt,matic/usdt,dot/usdt,shib/usdt,ltc/usdt,
+                    tron/usdt,avax/usdt,link/usdt,atom/usdt,xlm/usdt,vet/usdt,apt/usdt,lunc/usdt,icp/usdt,near/usdt,algo/eth,
+                    fil/usdt,qnt/usdt,gala/usdt,sand/usdt,mana/usdt,chz/usdt,axs/usdt,enj/usdt,ftm/usdt,egld/usdt,hbar/usdt,
+                    theta/usdt,xtz/usdt,eos/usdt,zil/usdt,iost/usdt,cake/usdt,ksm/usdt,cvx/usdt,kava/usdt,rune/usdt,crv/usdt,
+                    1inch/usdt,lp/usdt,bal/usdt,comp/usdt,avax/eth,waves/usdt,dydx/usdt,ren/usdt,arb/usdt,hot/usdt,dash/usdt,
+                    rose/usdt,ioz/usdt,bnb/eth,uni/usdt,omg/usdt,hive/usdt,xem/usdt,zrx/usdt,bat/btc,xlm/btc,doge/btc,sol/btc,
+                    ada/btc,eth/btc,bnb/btc,trx/btc,matic/btc,shib/btc,link/btc,ltc/btc,atom/btc,ftm/btc,sand/btc,mana/btc,axs/bnb,
+                    enj/btc,ksm/btc,chz/btc,near/btc,icp/btc,qnt/btc,algo/btc,fil/btc,zil/btc,eos/btc,iost/btc,theta/btc,xtz/btc,
+                    vet/btc,crv/btc,1inch/btc,bal/btc,ltc/bnb,waves/btc,avax/btc</textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="CopyToClipboardExampleList()">Kopyala</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="WSProcessSpinner" class="d-flex justify-content-center align-items-center mt-2 text-center">
+        <!-- Spinner -->
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div class="text-primary ms-2 me-2" style="font-weight: bold;">Websocket veri çekme işlemi başlatılıyor...</div>
+    </div>
+
+    <div class="d-flex justify-content-center align-items-center mt-5 pt-5">
+        <button class="btn btn-primary me-2">Tüm Websocket verilerini temizle</button>
+        <h6 class="w-50">(Websocket tarafından çekilen bitcoin verilerinin tümünü siler. 
+            Eğer bir coin belirli bir zaman aralığında sürekli çekilmediyse, 
+            bu toplam hacmi hesaplarken hatalı sonuçlara yol açabilir, 
+            bu yüzden çekilmiş verileri silerek websocket ile çekme işlemine baştan başlamak isteyebilirsiniz.)</h6>
+    </div>
+
+    <h6 class="text-center mt-5 pt-5">~</h6>
+    
+<script src="navbartemplate.html"></script>
+<script>
+
+    const popularCoins = [
+        'btc/usdt', 'eth/usdt', 'bnb/usdt', 'xrp/usdt', 'sol/usdt',
+        'ada/usdt', 'doge/usdt', 'matic/usdt', 'dot/usdt', 'shib/usdt',
+        'ltc/usdt', 'avax/usdt', 'link/usdt', 'atom/usdt', 'xlm/usdt',
+        'vet/usdt', 'apt/usdt', 'lunc/usdt', 'icp/usdt', 'near/usdt',
+        'fil/usdt', 'qnt/usdt', 'gala/usdt', 'sand/usdt', 'mana/usdt',
+        'chz/usdt', 'axs/usdt', 'enj/usdt', 'ftm/usdt', 'egld/usdt',
+        'hbar/usdt', 'xtz/usdt', 'eos/usdt', 'zil/usdt', 'iost/usdt',
+        'cake/usdt', 'ksm/usdt', 'cvx/usdt', 'kava/usdt', 'rune/usdt',
+        'crv/usdt', '1inch/usdt', 'bal/usdt', 'comp/usdt', 'avax/eth',
+        'waves/usdt', 'dydx/usdt', 'ren/usdt', 'arb/usdt', 'hot/usdt',
+        'dash/usdt', 'rose/usdt', 'bnb/eth', 'uni/usdt', 'omg/usdt',
+        'hive/usdt', 'xem/usdt', 'zrx/usdt', 'bat/btc', 'xlm/btc',
+        'doge/btc', 'sol/btc', 'ada/btc', 'eth/btc', 'bnb/btc',
+        'trx/btc', 'matic/btc', 'link/btc', 'ltc/btc', 'atom/btc',
+        'ftm/btc', 'sand/btc', 'mana/btc', 'axs/bnb', 'ksm/btc',
+        'chz/btc', 'icp/btc', 'qnt/btc', 'algo/btc', 'fil/btc',
+        'zil/btc', 'eos/btc', 'iost/btc', 'theta/btc', 'vet/btc',
+        '1inch/btc', 'bal/btc', 'ltc/bnb', 'waves/btc'
+    ];
+
+    const popularCoinsWsFormat = [
+        'btcusdt', 'ethusdt', 'bnbusdt', 'xrpusdt', 'solusdt',
+        'adausdt', 'dogeusdt', 'maticusdt', 'dotusdt', 'shibusdt',
+        'ltcusdt', 'avaxusdt', 'linkusdt', 'atomusdt', 'xlmusdt',
+        'vetusdt', 'aptusdt', 'luncusdt', 'icpusdt', 'nearusdt',
+        'filusdt', 'qntusdt', 'galausdt', 'sandusdt', 'manausdt',
+        'chzusdt', 'axsusdt', 'enjusdt', 'ftmusdt', 'egldusdt',
+        'hbarusdt', 'xtzusdt', 'eosusdt', 'zilusdt', 'iostusdt',
+        'cakeusdt', 'ksmusdt', 'cvxusdt', 'kavausdt', 'runeusdt',
+        'crvusdt', '1inchusdt', 'balusdt', 'compusdt', 'avaxeth',
+        'wavesusdt', 'dydxusdt', 'renusdt', 'arbusdt', 'hotusdt',
+        'dashusdt', 'roseusdt', 'bnbeth', 'uniusdt', 'omgusdt',
+        'hiveusdt', 'xemusdt', 'zrxusdt', 'batbtc', 'xlmbtc',
+        'dogebtc', 'solbtc', 'adabtc', 'ethbtc', 'bnbbtc',
+        'trxbtc', 'maticbtc', 'linkbtc', 'ltcbtc', 'atombtc',
+        'ftmbtc', 'sandbtc', 'manabtc', 'axsbnb', 'ksmbtc',
+        'chzbtc', 'icpbtc', 'qntbtc', 'algobtc', 'filbtc',
+        'zilbtc', 'eosbtc', 'iostbtc', 'thetabtc', 'vetbtc',
+        '1inchbtc', 'balbtc', 'ltcbnb', 'wavesbtc'
+    ];
+
+    var DisabledAnyFetchedCoin = false;
+
+    function WriteExampleModalValues() {
+        const exampleModal = document.getElementById("examplestext-to-copy");
+        const data = popularCoins.join(",");
+        exampleModal.innerHTML = data;
+    }
+    WriteExampleModalValues();
+
+    async function WSLoadingSpinner() {
+        const spinner = document.getElementById("WSProcessSpinner");
+        
+        const fetchState = await fetch("/WSConnectionsAreReady");
+        const fetchStateData = await fetchState.json();
+        
+        console.log("WS fetching started : ", fetchStateData);
+
+        if (fetchStateData == true) {
+            spinner.classList.add("d-none");
+            spinner.classList.remove("d-block");
+        }
+        else {
+            spinner.classList.add("d-block");
+            spinner.classList.remove("d-none");
+            setTimeout(() => {
+                WSLoadingSpinner();
+            }, 500);
+        }
+        
+    }
+    WSLoadingSpinner();
+
+    async function ProcessToggleForFetchedCoins()
+    {
+        const container = document.getElementById('coinToggleContainer');
+
+        container.innerHTML = "";
+
+        const fetcingCoins = await fetch("/api/ws/binance/fetchingsymbols");
+        const fetchedCoins = await fetcingCoins.json();
+
+        console.log(fetchedCoins);
+
+        if (fetchedCoins.length == 0) {
+             const text = `<h6 class="text-center">Hiçbir coin girilmedi.</h6>`;
+             container.innerHTML += text;
+        }
+
+        for (let index = 0; index < fetchedCoins.length; index++) {
+
+            const element = `
+            <div class="form-check form-switch">
+                <input class="toggle-btn form-check-input" type="checkbox" id="toggle${index}" checked data-symbol='${fetchedCoins[index]}' onchange="EnableOrDisableFetchedCoin(this, '${fetchedCoins[index]}')">
+                <label class="form-check-label" for="toggle${index}">${fetchedCoins[index]}</label>
+            </div>
+            `;
+
+            container.innerHTML += element;
+            
+        }
+    }
+    ProcessToggleForFetchedCoins();
+
+    async function EnableOrDisableFetchedCoin(toggle, symbol){
+
+        console.log(toggle.checked, symbol);
+        const symbolValue = String(symbol);
+        
+        // if (toggle.checked) {
+        //     const fetcingCoinsToEnable = await fetch(`/api/ws/binance/enablefetch?symbol=${symbolValue}`);
+        // }
+        // else {
+        //     const fetcingCoinsToDisable = await fetch(`/api/ws/binance/stopfetch?symbol=${symbolValue}`);
+        //     DisabledAnyFetchedCoin = true;
+        // }
+
+        // const fetcingCoinsToDisable = await fetch(`/api/ws/binance/stopfetch?symbol=${coinsymbol}`);
+
+    }
+
+    function OpenAllToggles(){
+        document.getElementById('openAllToggles').addEventListener('click', function () {
+            const toggles = document.querySelectorAll('.toggle-btn');
+      
+            toggles.forEach(toggle => {
+                toggle.checked = true;  // Toggle'ı açık yap
+                toggle.dispatchEvent(new Event('change'));
+            });
+        });
+    }
+    OpenAllToggles();
+
+    function CloseAllToggles(){
+        document.getElementById('closeAllToggles').addEventListener('click', function () {
+            const toggles = document.querySelectorAll('.toggle-btn');
+      
+            toggles.forEach(toggle => {
+                toggle.checked = false;  // Toggle'ı açık yap
+                toggle.dispatchEvent(new Event('change'));
+            });
+        });
+    }
+    CloseAllToggles();
+
+    // Kopyala işlemini yapacak fonksiyon
+    function CopyToClipboardExampleList() {
+      var copyText = document.getElementById("examplestext-to-copy"); // Kopyalanacak metni seçiyoruz
+
+      // Kopyalanacak metni seç
+      copyText.select();
+      copyText.setSelectionRange(0, 99999); // Mobil cihazlar için de uygun
+
+      // Panoya kopyala
+      navigator.clipboard.writeText(copyText.value).then(function() {
+        // Başarıyla kopyalandığında kullanıcıya bildirim ver
+        alert("Metin panoya kopyalandı: " + copyText.value);
+      }).catch(function(err) {
+        // Hata durumunda kullanıcıya bildirim ver
+        alert("Kopyalama başarısız: " + err);
+      });
+    }
+
+    // function ProcessInputListForCoins() {
+    //     // "+" butonuna tıklandığında yeni bir input ekle
+    //     document.getElementById('addInput').addEventListener('click', function () {
+    //         const inputWrapper = document.getElementById('inputWrapper');
+    //         const newInput = document.createElement('div');
+    //         newInput.className = 'input-group';
+    //         newInput.innerHTML = `<input type="text" class="form-control" placeholder="Enter text">`;
+    //         inputWrapper.appendChild(newInput);
+    //         newInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    //     });
+    // }
+    // ProcessInputListForCoins();
+
+    //yapılandırılıyor
+    function SubmitSelectedCoins() {
+        document.getElementById('SubmitSelectedCoins').addEventListener('click', async function(event) {
+            event.preventDefault(); // Formun yenilenmesini engeller
+
+            const textareaValue = document.getElementById('InputSelectedCoins');
+            console.log(textareaValue.value);
+
+            try {
+                //check toogles
+                const toggles = document.querySelectorAll('.toggle-btn');
+                for (const toggle of toggles) {
+                    try {
+                        const symbol = toggle.getAttribute('data-symbol');
+                        if (toggle.checked) {
+                            const fetcingCoinsToEnable = await fetch(`/api/ws/binance/enablefetch?symbol=${symbol}`);
+                        }
+                        else {
+                            const fetcingCoinsToDisable = await fetch(`/api/ws/binance/stopfetch?symbol=${symbol}`);
+                            DisabledAnyFetchedCoin = true;
+                        }
+                    }
+                    catch (error) {
+                        console.log("Error while proccessing on a toggle button : ", error, " toggle id: ", toggle.id);
+                    }
+                }
+
+                const response = await fetch('/submitSelectedCoins', { // Sunucu URL'sini değiştirin
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ data: textareaValue.value, hasDisabledCoin: DisabledAnyFetchedCoin }), // Textarea verisi JSON formatında gönderilir
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    document.getElementById('responseMessage').textContent = 'Sunucudan Yanıt: ' + result.message;
+                    textareaValue.value = result.returningSymbols;
+                    ProcessToggleForFetchedCoins();
+                    WSLoadingSpinner();
+                } else {
+                    document.getElementById('responseMessage').textContent = 'Hata: ' + response.statusText;
+                }
+
+                DisabledAnyFetchedCoin = false;
+
+            } catch (error) {
+                document.getElementById('responseMessage').textContent = 'Hata: ' + error.message;
+            }
+        });
+    }
+    SubmitSelectedCoins();
+
+</script>
+
+</body>
+</html>
