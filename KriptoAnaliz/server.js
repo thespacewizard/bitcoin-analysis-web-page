@@ -748,7 +748,7 @@ const binance = new ccxt.binance({
 app.get('/api/ccxt/tickers', async function (req, res) { ///api/ws/binance - ws
 
   // REST API connection
-  // const symbol = req.query.symbol;
+  const symbol = req.query.symbol;
   // const testlist = ['Elma', 'Armut', 'Muz', 'Kiraz', 'Portakal', `${Symbol}`];
   // res.json(testlist);
   // const symbol = req.query.symbol;
